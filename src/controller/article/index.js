@@ -120,7 +120,7 @@ class ArticleController {
     const req = ctx.params
     ArticleController.checkArticle(ctx, req, 'id')
     const article = await ArticleModel
-      .findById(req.id, {__v: 0, order: 0})
+      .findById(req.id, {__v: 0, order: 0, publishOrder: 0})
       .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
     console.log(article)
     if (article) {
@@ -190,9 +190,10 @@ class ArticleController {
   static async getPigeonhole (ctx) {
     console.log('归档')
     const pigeonholes = {}
+    const data = []
     const articles = await ArticleModel
       .find({state: 1}, {content: 0, __v: 0, order: 0, publishOrder: 0})
-      .sort({publishedYear: -1})
+      .sort({publishedYear: -1, publishOrder: -1})
       .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
     for (let article of articles) {
       if (!pigeonholes[article.publishedYear]) {
@@ -203,7 +204,10 @@ class ArticleController {
       }
       pigeonholes[article.publishedYear].articles.push(article)
     }
-    ctx.body = {code: CODE.OK, message: '查询成功！', data: {pigeonholes}}
+    for (let key in pigeonholes) {
+      data.push(pigeonholes[key])
+    }
+    ctx.body = {code: CODE.OK, message: '查询成功！', data}
   }
 }
 
