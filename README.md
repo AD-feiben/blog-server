@@ -18,4 +18,4 @@ npm run start
 
 ## Document
 
-[see document]('./doc/README.md')
+[see document](./doc/README.md)
