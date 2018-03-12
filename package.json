@@ -12,6 +12,7 @@
     "koa-bodyparser": "3",
     "koa-json": "^2.0.2",
     "koa-router": "^7.4.0",
+    "koa2-cors": "^2.0.5",
     "mongoose": "^5.0.9",
     "nodemon": "^1.17.1"
   }
