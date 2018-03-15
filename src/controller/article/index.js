@@ -113,7 +113,7 @@ class ArticleController {
       message: '查询成功'
     }
   }
-  // 根据文章id查询文章 阅读量加1
+  // 根据文章id查询文章 阅读量加1 管理后台请求时不加1
   static async getArticleById (ctx, next) {
     console.log('根据id查询文章')
     const req = ctx.params
@@ -121,9 +121,8 @@ class ArticleController {
     const article = await ArticleModel
       .findById(req.id, {__v: 0, order: 0, publishOrder: 0})
       .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-    console.log(article)
     if (article) {
-      if (article.state) { // 已发布的文章，阅读量加1
+      if (ctx.query.source !== 'admin' && article.state) { // 已发布的文章，阅读量加1
         article.readingQuantity++
         await ArticleModel
           .findByIdAndUpdate(req.id, article)
