@@ -17,7 +17,10 @@ module.exports = (app) => {
       /^\/user/,
       /^\/register/,
       /^\/login/,
-      /^\/article/
+      /^\/article/,
+      /^\/classify/,
+      /^\/tags/,
+      /^\/pigeonhole/
     ]
   }))
 }
