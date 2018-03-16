@@ -40,10 +40,12 @@ class ArticleController {
       const date = new Date()
       let createdDate = date.format('yyyy-MM-dd HH:mm:ss')
       let order = date.getTime()
-      if (req.state) {
+      if (req.state !== '0') {
         req.publishedDate = createdDate
         req.publishedYear = date.getFullYear()
         req.publishOrder = date.getTime()
+      } else {
+        req.publishOrder = 0
       }
       await ArticleModel.create({...req, createdDate, order}).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
       ctx.body = {code: CODE.OK, message: '添加文章成功！'}

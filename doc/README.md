@@ -129,7 +129,7 @@
 
 > 请求方式： POST
 
-> URL： http://ip:port/article
+> URL： http://ip:port/saveArticle
 
 - 请求参数说明
 
@@ -157,7 +157,7 @@
 
 > 请求方式： POST
 
-> URL： http://ip:port/article/setState
+> URL： http://ip:port/setState
 
 - 请求参数说明
 
@@ -179,7 +179,7 @@
 
 > 请求方式： POST
 
-> URL： http://ip:port/article/delete
+> URL： http://ip:port/deleteArticle
 
 - 请求参数说明
 
