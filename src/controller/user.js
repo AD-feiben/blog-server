@@ -54,9 +54,27 @@ class UserController {
         lastLoginTime: user.lastLoginTime || '',
         createdTime: user.createdTime
       }, secret, { expiresIn: '2h' })
-      ctx.body = {code: CODE.OK, data: { token }, messag: '登录成功'}
+      ctx.body = {code: CODE.OK, data: { token, account }, messag: '登录成功'}
       // 更新登录时间
       await UserModel.findByIdAndUpdate(user._id, { lastLoginTime: new Date().getTime() })
+    } else {
+      ctx.body = {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
+    }
+  }
+  // 修改密码
+  static async updatePwd (ctx, next) {
+    let { token, pwd, newPwd } = ctx.request.body
+    let account = ''
+    UserController.checkUser(ctx, ctx.request.body, ['token', 'pwd', 'newPwd'])
+    pwd = crypto(pwd)
+    newPwd = crypto(newPwd)
+    let decode = jwt.decode(token)
+    if (decode) {
+      account = decode.account
+      let user = await UserModel
+        .findOneAndUpdate({account, pwd}, {pwd: newPwd})
+        .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+      ctx.body = user ? {code: CODE.OK, message: '密码修改成功'} : {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
     } else {
       ctx.body = {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
     }

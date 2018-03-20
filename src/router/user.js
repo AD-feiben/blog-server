@@ -7,4 +7,6 @@ module.exports = (router) => {
   router.post('/register', UserController.register)
   // 用户登录
   router.post('/login', UserController.login)
+  // 修改密码
+  router.post('/updatePwd', UserController.updatePwd)
 }
