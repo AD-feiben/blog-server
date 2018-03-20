@@ -1,0 +1,16 @@
+{
+  "name": "blog-server",
+  "script": "./index.js",
+  "cwd": "./",
+  "watch": [
+    "src/controller",
+    "src/router",
+    "src/middleware",
+    "src/util",
+    "src/db.js"
+  ],
+  "ignore_watch": [
+    "node_modules"
+  ],
+  "error_file": "./log/pm2/error.log"
+}
