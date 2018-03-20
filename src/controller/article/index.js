@@ -1,5 +1,6 @@
 const ArticleModel = require('../../models/article')
 const CODE = require('../../util/code')
+const jwt = require('jsonwebtoken')
 
 const isEmpty = (val) => {
   return (!val || val === '' || val === 'null' || val === 'undefined')
@@ -26,47 +27,57 @@ class ArticleController {
   static async saveArticle (ctx, next) {
     const req = ctx.request.body
     // 必填字段
-    const required = ['title', 'desc', 'content', 'tags', 'classify']
+    const required = ['token', 'title', 'desc', 'content', 'tags', 'classify']
     ArticleController.checkArticle(ctx, req, required)
-    if (req.id) {
-      const id = req.id
-      delete req.id
-      delete req.state
-      const article = await ArticleModel
-        .findByIdAndUpdate(id, req)
-        .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-      ctx.body = article ? {code: CODE.OK, message: '文章修改成功！'} : {code: CODE.NOT_FOUND, message: '无此文章'}
-    } else {
-      const date = new Date()
-      let createdDate = date.format('yyyy-MM-dd HH:mm:ss')
-      let order = date.getTime()
-      if (req.state !== '0') {
-        req.publishedDate = createdDate
-        req.publishedYear = date.getFullYear()
-        req.publishOrder = date.getTime()
+    const role = jwt.decode(req.token).role
+    if (role === 1) {
+      if (req.id) {
+        const id = req.id
+        delete req.id
+        delete req.state
+        const article = await ArticleModel
+          .findByIdAndUpdate(id, req)
+          .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+        ctx.body = article ? {code: CODE.OK, message: '文章修改成功！'} : {code: CODE.NOT_FOUND, message: '无此文章'}
       } else {
-        req.publishOrder = 0
+        const date = new Date()
+        let createdDate = date.format('yyyy-MM-dd HH:mm:ss')
+        let order = date.getTime()
+        if (req.state !== '0') {
+          req.publishedDate = createdDate
+          req.publishedYear = date.getFullYear()
+          req.publishOrder = date.getTime()
+        } else {
+          req.publishOrder = 0
+        }
+        await ArticleModel.create({...req, createdDate, order}).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+        ctx.body = {code: CODE.OK, message: '添加文章成功！'}
       }
-      await ArticleModel.create({...req, createdDate, order}).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-      ctx.body = {code: CODE.OK, message: '添加文章成功！'}
+    } else {
+      ctx.body = {code: CODE.PARAMS_ERROR, message: `普通账号不允许${req.id ? '修改' : '添加'}文章`}
     }
   }
   // 根据id修改文章状态
   static async setArticleState (ctx, next) {
     console.log('根据id修改文章状态')
     const req = ctx.request.body
-    const required = ['id', 'state']
+    const required = ['token', 'id', 'state']
     ArticleController.checkArticle(ctx, req, required)
-    const id = req.id
-    const state = req.state
-    let date = new Date()
-    let publishedDate = +state ? date.format('yyyy-MM-dd HH:mm:ss') : ''
-    let publishedYear = +state ? date.getFullYear() : ''
-    let publishOrder = +state ? date.getTime() : 0
-    await ArticleModel
-      .findByIdAndUpdate(id, {state, publishedDate, publishedYear, publishOrder})
-      .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-    ctx.body = {code: CODE.OK, message: '修改成功！'}
+    const role = jwt.decode(req.token).role
+    if (role === 1) {
+      const id = req.id
+      const state = req.state
+      let date = new Date()
+      let publishedDate = +state ? date.format('yyyy-MM-dd HH:mm:ss') : ''
+      let publishedYear = +state ? date.getFullYear() : ''
+      let publishOrder = +state ? date.getTime() : 0
+      await ArticleModel
+        .findByIdAndUpdate(id, {state, publishedDate, publishedYear, publishOrder})
+        .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+      ctx.body = {code: CODE.OK, message: '修改成功！'}
+    } else {
+      ctx.body = {code: CODE.PARAMS_ERROR, message: '普通账号不允许修改文章'}
+    }
   }
   // 查询文章列表
   static async getArticle (ctx, next) {
@@ -139,10 +150,15 @@ class ArticleController {
   static async deleteArticleById (ctx, next) {
     console.log('根据id删除文章')
     const req = ctx.request.body
-    ArticleController.checkArticle(ctx, req, 'id')
-    await ArticleModel.findByIdAndRemove(req.id)
-      .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-    ctx.body = {code: CODE.OK, message: '删除成功！'}
+    ArticleController.checkArticle(ctx, req, ['token', 'id'])
+    const role = jwt.decode(req.token).role
+    if (role === 1) {
+      await ArticleModel.findByIdAndRemove(req.id)
+        .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+      ctx.body = {code: CODE.OK, message: '删除成功！'}
+    } else {
+      ctx.body = {code: CODE.PARAMS_ERROR, message: '普通账号不允许删除文章'}
+    }
   }
   // 查询所有分类
   static async getClassify (ctx) {

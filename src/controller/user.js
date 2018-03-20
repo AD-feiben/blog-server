@@ -21,24 +21,43 @@ class UserController {
     }
   }
   // 检查是否有用户
-  static async isNoUser (ctx) {
+  static async getUserCount (ctx) {
     const users = await UserModel.find().catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-    return !users.length
+    return users.length
   }
-  static async isExistUser (ctx) {
-    ctx.body = await UserController.isNoUser(ctx) ? { code: CODE.OK, message: '暂无用户存在' } : { code: CODE.UESR_EXIST, message: '已有用户存在' }
+  static async canRegister (ctx) {
+    const userCount = await UserController.getUserCount(ctx)
+    if (userCount === 0) {
+      ctx.body = {code: CODE.OK, message: '可以注册管理员账号'}
+    } else if (userCount === 1) {
+      ctx.body = {code: 201, message: '可以注册普通账号'}
+    } else {
+      let testUser = await UserModel.findOne({role: 0}).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+      let { account } = testUser
+      ctx.body = { code: CODE.UESR_EXIST, message: '已经存在测试账号了，请勿注册！', data: {account} }
+    }
   }
   // 注册用户
   static async register (ctx, next) {
-    if (await UserController.isNoUser(ctx)) {
+    const userCount = await UserController.getUserCount(ctx)
+    if (userCount < 2) {
       let { account, pwd } = ctx.request.body
       UserController.checkUser(ctx, ctx.request.body, ['account', 'pwd'])
-      pwd = crypto(pwd)
-      let createdTime = new Date().format('yyyy-MM-dd HH:mm:ss')
-      await UserModel.create({ account, pwd, createdTime }).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-      ctx.body = { code: CODE.OK, message: '注册成功！' }
+      // 用户名查重
+      let user = await UserModel.findOne({ account }).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+      if (!user) {
+        pwd = crypto(userCount === 0 ? pwd : 666666) // 非管理员，密码为固定值
+        let createdTime = new Date().format('yyyy-MM-dd HH:mm:ss')
+        let role = +!(userCount ^ 0) // 同或
+        await UserModel.create({ account, pwd, createdTime, role }).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+        ctx.body = { code: CODE.OK, message: '注册成功！' }
+      } else {
+        ctx.body = { code: CODE.PARAMS_ERROR, message: '用户名已经存在' }
+      }
     } else {
-      ctx.body = { code: CODE.UESR_EXIST, message: '已有用户存在，请直接登录！' }
+      let testUser = await UserModel.findOne({role: 0}).catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+      let { account, pwd } = testUser
+      ctx.body = { code: CODE.UESR_EXIST, message: '已经存在测试账号了，请勿注册！', data: { account, pwd } }
     }
   }
   // 用户登录
@@ -52,9 +71,10 @@ class UserController {
         id: user._id,
         account,
         lastLoginTime: user.lastLoginTime || '',
-        createdTime: user.createdTime
+        createdTime: user.createdTime,
+        role: user.role
       }, secret, { expiresIn: '2h' })
-      ctx.body = {code: CODE.OK, data: { token, account }, messag: '登录成功'}
+      ctx.body = {code: CODE.OK, data: { token, role: user.role }, messag: '登录成功'}
       // 更新登录时间
       await UserModel.findByIdAndUpdate(user._id, { lastLoginTime: new Date().getTime() })
     } else {
@@ -71,10 +91,14 @@ class UserController {
     let decode = jwt.decode(token)
     if (decode) {
       account = decode.account
-      let user = await UserModel
-        .findOneAndUpdate({account, pwd}, {pwd: newPwd})
-        .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
-      ctx.body = user ? {code: CODE.OK, message: '密码修改成功'} : {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
+      if (decode.role === 1) {
+        let user = await UserModel
+          .findOneAndUpdate({account, pwd}, {pwd: newPwd})
+          .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
+        ctx.body = user ? {code: CODE.OK, message: '密码修改成功'} : {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
+      } else {
+        ctx.body = {code: CODE.PARAMS_ERROR, messag: '普通账号不允许修改密码'}
+      }
     } else {
       ctx.body = {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
     }

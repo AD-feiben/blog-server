@@ -8,6 +8,10 @@ const userSchema = new Schema({
     unique: true
   },
   pwd: String,
+  role: { // 用户角色 管理员： 1， 普通用户： 0
+    type: Number,
+    default: 0
+  },
   lastLoginTime: String, // '上次登录时间戳'
   createdTime: String // 注册日期
 })
