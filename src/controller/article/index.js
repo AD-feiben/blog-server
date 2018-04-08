@@ -192,7 +192,7 @@ class ArticleController {
       code: CODE.OK,
       message: '查询成功',
       data: {
-        classify: rClassifies // 去重
+        classifies: rClassifies // 去重
       }
     }
   }
