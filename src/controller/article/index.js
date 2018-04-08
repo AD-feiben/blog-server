@@ -173,11 +173,26 @@ class ArticleController {
     for (let article of articles) {
       classifies.push(article.classify)
     }
+    let data = await classifies.reduce((allData, ele) => {
+      if (ele in allData) {
+        allData[ele]++
+      } else {
+        allData[ele] = 1
+      }
+      return allData
+    }, {})
+    const rClassifies = []
+    for (let key in data) {
+      rClassifies.push({
+        tag: key,
+        count: data[key]
+      })
+    }
     ctx.body = {
       code: CODE.OK,
       message: '查询成功',
       data: {
-        classify: [...new Set(classifies)] // 去重
+        classify: rClassifies // 去重
       }
     }
   }
@@ -194,11 +209,26 @@ class ArticleController {
     for (let article of articles) {
       tags.push(...article.tags.split(','))
     }
+    let data = await tags.reduce((allData, ele) => {
+      if (ele in allData) {
+        allData[ele]++
+      } else {
+        allData[ele] = 1
+      }
+      return allData
+    }, {})
+    const rTags = []
+    for (let key in data) {
+      rTags.push({
+        tag: key,
+        count: data[key]
+      })
+    }
     ctx.body = {
       code: CODE.OK,
       message: '查询成功',
       data: {
-        tags: [...new Set(tags)] // 去重
+        tags: rTags // 去重
       }
     }
   }
