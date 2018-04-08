@@ -184,7 +184,7 @@ class ArticleController {
     const rClassifies = []
     for (let key in data) {
       rClassifies.push({
-        tag: key,
+        classify: key,
         count: data[key]
       })
     }
