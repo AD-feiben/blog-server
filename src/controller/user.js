@@ -74,7 +74,7 @@ class UserController {
         createdTime: user.createdTime,
         role: user.role
       }, secret, { expiresIn: '2h' })
-      ctx.body = {code: CODE.OK, data: { token, role: user.role }, messag: '登录成功'}
+      ctx.body = {code: CODE.OK, data: { token, role: user.role }, message: '登录成功'}
       // 更新登录时间
       await UserModel.findByIdAndUpdate(user._id, { lastLoginTime: new Date().getTime() })
     } else {
@@ -97,7 +97,7 @@ class UserController {
           .catch(() => { ctx.throw(CODE.SERVER_ERROR) })
         ctx.body = user ? {code: CODE.OK, message: '密码修改成功'} : {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
       } else {
-        ctx.body = {code: CODE.PARAMS_ERROR, messag: '普通账号不允许修改密码'}
+        ctx.body = {code: CODE.PARAMS_ERROR, message: '普通账号不允许修改密码'}
       }
     } else {
       ctx.body = {code: CODE.PARAMS_ERROR, message: '账号或密码错误！'}
