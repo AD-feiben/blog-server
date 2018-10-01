@@ -11,7 +11,7 @@ module.exports = (app) => {
   app.use(bodyParser())
   app.use(json({pretty: false}))
   app.use(logger())
-  app.use(cors())
+  // app.use(cors())
   app.use(koaJwt({secret}).unless({
     path: [
       /^\/user/,
